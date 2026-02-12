@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../Context/CartContext";
 import { supabase } from "../SupabaseClient";
 
@@ -11,6 +11,23 @@ type NavbarClientProps = {
 const NavbarClient: React.FC<NavbarClientProps> = ({ filter, setFilter }) => {
   const { totalItems } = useCart();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleMenuClick = () => {
+    if (location.pathname !== "/meniu") {
+      navigate("/meniu");
+    } else {
+      setFilter(null);
+    }
+  };
+
+  const handleFilterClick = (filterValue: "mancare" | "bauturi") => {
+    if (location.pathname !== "/meniu") {
+      navigate("/meniu");
+    }
+    setFilter(filterValue);
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -29,29 +46,29 @@ const NavbarClient: React.FC<NavbarClientProps> = ({ filter, setFilter }) => {
   return (
     <div className="bg-black shadow sticky top-0 z-10">
       <div className="max-w-5xl mx-auto p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-purple-600 ">🍽️ Meniul nostru</h1>
+        <h1 className="text-2xl font-bold text-orange-500 ">🍽️ Meniul nostru</h1>
 
         <div className="flex gap-4 items-center">
           {/* MENIU STATIC */}
           <div className="relative group">
             <button
               type="button"
-              onClick={() => setFilter(null)}
+              onClick={handleMenuClick}
               className="text-sm font-semibold text-orange-500 transition"
             >
               Meniu
             </button>
 
-            <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-44 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+            <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-44 bg-black rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
               <ul className="py-2 text-sm">
                 <li>
                   <button
-                    onClick={() => setFilter("mancare")}
-                    className={`w-full text-left px-4 py-2 hover:bg-gray-100
+                    onClick={() => handleFilterClick("mancare")}
+                    className={`w-full text-left px-4 py-2 hover:bg-zinc-800
                       ${
                         filter === "mancare"
-                          ? "text-purple-600 font-semibold"
-                          : "text-purple-600"
+                          ? "text-orange-500 font-semibold"
+                          : "text-orange-500"
                       }
                     `}
                   >
@@ -61,12 +78,12 @@ const NavbarClient: React.FC<NavbarClientProps> = ({ filter, setFilter }) => {
 
                 <li>
                   <button
-                    onClick={() => setFilter("bauturi")}
-                    className={`w-full text-left px-4 py-2 hover:bg-gray-100
+                    onClick={() => handleFilterClick("bauturi")}
+                    className={`w-full text-left px-4 py-2 hover:bg-zinc-800
                       ${
                         filter === "bauturi"
-                          ? "text-purple-600 font-semibold"
-                          : "text-purple-600"
+                          ? "text-orange-500 font-semibold"
+                          : "text-orange-500"
                       }
                     `}
                   >
@@ -80,7 +97,7 @@ const NavbarClient: React.FC<NavbarClientProps> = ({ filter, setFilter }) => {
           {/* FEEDBACK */}
           <Link
             to="/feedback"
-            className="text-sm font-semibold text-purple-600 hover:text-purple-600 transition"
+            className="text-sm font-semibold text-orange-500 hover:text-orange-500 transition"
           >
             Feedback
           </Link>
@@ -88,25 +105,25 @@ const NavbarClient: React.FC<NavbarClientProps> = ({ filter, setFilter }) => {
           {/* ✅ CONTACT */}
           <Link
             to="/contact"
-            className="text-sm font-semibold text-purple-600 hover:text-purple-600 transition"
+            className="text-sm font-semibold text-orange-500 hover:text-orange-500 transition"
           >
             Contact
           </Link>  
            <Link
           to="/rezervamasa"
-           className="text-sm font-semibold text-purple-600 hover:text-purple-600 transition">
+           className="text-sm font-semibold text-orange-500 hover:text-orange-500 transition">
          Rezervari
            </Link>      
           <Link
           to="/desprenoi"
-           className="text-sm font-semibold text-purple-600 hover:text-purple-600 transition">
+           className="text-sm font-semibold text-orange-500 hover:text-orange-500 transition">
           Despre Noi
            </Link>
 
              {/* Coș de cumpărături */}
              <Link
                to="/cos"
-               className="relative text-sm font-semibold text-purple-600 hover:text-purple-600 transition flex items-center gap-1"
+               className="relative text-sm font-semibold text-orange-500 hover:text-orange-500 transition flex items-center gap-1"
              >
                🛒 Coș
                {totalItems > 0 && (
@@ -119,7 +136,7 @@ const NavbarClient: React.FC<NavbarClientProps> = ({ filter, setFilter }) => {
              {/* Autentificare / Cont */}
              <Link
                to="/auth"
-               className="text-sm font-semibold text-purple-600 hover:text-purple-600 transition"
+               className="text-sm font-semibold text-orange-500 hover:text-orange-500 transition"
              >
                {isAuthenticated ? "👤 Contul meu" : "Autentificare"}
              </Link>

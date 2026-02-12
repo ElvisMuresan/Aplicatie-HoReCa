@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "../SupabaseClient";
 import { useCart } from "../Context/CartContext";
 import FeedbackProdusModal from "../Componente/FeedbackProdus";
+import NavbarClient from "../Componente/NavbarClient";
 
 // Tipuri pentru comenzi (adaptate la structura tabelelor existente)
 type ComandaProdus = {
@@ -260,12 +261,6 @@ if (profileError) {
   setLoading(false);
 };
 
-  // Delogare
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/meniu");
-  };
-
   // Formatare dată
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("ro-RO", {
@@ -311,385 +306,363 @@ if (profileError) {
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* NAVBAR SIMPLIFICAT */}
-      <div className="bg-white shadow sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto p-4 flex items-center justify-between">
-          <Link to="/meniu" className="text-2xl font-bold flex items-center gap-2">
-            ← <span className="text-lg">Înapoi la Meniu</span>
-          </Link>
-          
-          <div className="flex items-center gap-4">
-            {isAuthenticated && (
-              <>
-                <span className="text-gray-600 text-sm hidden sm:block">
-                  {userEmail}
+    <div>
+      <NavbarClient filter={null} setFilter={() => {}} />
+      <div>
+        <div className="max-w-5xl mx-auto p-4">
+          {/* HEADER */}
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">
+              🛒 Coșul tău
+              {totalItems > 0 && (
+                <span className="bg-orange-500 text-white text-sm px-3 py-1 rounded-full">
+                  {totalItems} {totalItems === 1 ? "produs" : "produse"}
                 </span>
-                <button
-                  onClick={handleLogout}
-                  className="text-red-500 hover:text-red-700 text-sm font-semibold"
-                >
-                  Delogare
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto p-4">
-        {/* HEADER */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">
-            🛒 Coșul tău
-            {totalItems > 0 && (
-              <span className="bg-orange-500 text-white text-sm px-3 py-1 rounded-full">
-                {totalItems} {totalItems === 1 ? "produs" : "produse"}
-              </span>
-            )}
-          </h1>
-          
-          {isAuthenticated && (
-            <button
-              onClick={() => setShowOrders(!showOrders)}
-              className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2"
-            >
-              📋 {showOrders ? "Coș" : "Comenzile mele"}
-            </button>
-          )}
-        </div>
-
-        {/* MESAJ SUCCES */}
-        {showSuccess && (
-          <div className="mb-6 p-6 bg-green-900 border border-green-700 rounded-2xl text-center">
-            <div className="text-4xl mb-3">🎉</div>
-            <h2 className="text-2xl font-bold text-green-400 mb-2">
-              Comanda a fost plasată cu succes!
-            </h2>
-            {ultimulCodComanda && (
-              <div className="bg-white/10 rounded-lg p-4 my-4">
-                <p className="text-green-200 text-sm mb-2">Codul comenzii tale:</p>
-                <p className="text-white text-3xl font-mono font-bold tracking-wider">
-                  {ultimulCodComanda}
-                </p>
-              </div>
-            )}
-            <p className="text-green-200">
-              Vei primi confirmare pe email cu codul comenzii. Mulțumim!
-            </p>
-          </div>
-        )}
-
-        {/* MESAJ PENTRU GUEST - OPȚIONAL AUTENTIFICARE */}
-        {!isAuthenticated && (
-          <div className="mb-6 p-4 bg-zinc-900 border border-zinc-700 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-gray-300 text-sm">
-              💡 <span className="text-orange-400">Ai cont?</span> Autentifică-te pentru a-ți salva comenzile și a primi reduceri!
-            </p>
-            <button
-              onClick={() => navigate("/auth")}
-              className="bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-4 py-2 rounded-lg transition text-sm"
-            >
-              Autentifică-te
-            </button>
-          </div>
-        )}
-
-        {/* SECȚIUNEA ISTORIC COMENZI */}
-        {showOrders && isAuthenticated ? (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">📋 Istoricul comenzilor</h2>
+              )}
+            </h1>
             
-            {loadingOrders ? (
-              <p className="text-orange-500 animate-pulse">Se încarcă comenzile...</p>
-            ) : orders.length === 0 ? (
-              <div className="bg-zinc-900 rounded-2xl p-8 text-center border border-zinc-800">
-                <p className="text-gray-400 text-lg">Nu ai nicio comandă încă.</p>
-              </div>
-            ) : (
-              orders.map((order) => (
-                <div 
-                  key={order.id} 
-                  className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800"
-                >
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                    <div>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <p className="text-gray-400 text-sm">
-                          Comanda #{order.id}
-                        </p>
-                        {order.cod_comanda && (
-                          <span className="bg-orange-500/20 text-orange-400 font-mono text-sm font-semibold px-3 py-1 rounded-full">
-                            {order.cod_comanda}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-gray-500 text-sm mt-1">
-                        {formatDate(order.created_at)}
-                      </p>
-                      <p className="text-2xl font-bold text-orange-500 mt-2">
-                        {order.total.toFixed(2)} lei
-                      </p>
-                    </div>
-                    <span className={`${getStatusColor(order.status)} text-white text-sm font-semibold px-4 py-2 rounded-full`}>
-                      {getStatusText(order.status)}
-                    </span>
-                  </div>
-                  
-                  {/* Produse din comandă */}
-                  <div className="border-t border-zinc-800 pt-4">
-                    <h4 className="text-gray-300 font-semibold mb-3">Produse comandate:</h4>
-                    <div className="space-y-2">
-                      {order.comenzi_produse?.map((item: ComandaProdus) => (
-                        <div 
-                          key={item.id} 
-                          className="flex justify-between items-center bg-zinc-800 rounded-lg p-3"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-white">{item.menu?.nume || "Produs"}</span>
-                            <span className="text-gray-400 text-sm">x{item.cantitate}</span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-orange-500 font-semibold">
-                              {(item.pret_unitar * item.cantitate).toFixed(2)} lei
+            {isAuthenticated && (
+              <button
+                onClick={() => setShowOrders(!showOrders)}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2"
+              >
+                📋 {showOrders ? "Coș" : "Comenzile mele"}
+              </button>
+            )}
+          </div>
+
+          {/* MESAJ SUCCES */}
+          {showSuccess && (
+            <div className="mb-6 p-6 bg-green-900 border border-green-700 rounded-2xl text-center">
+              <div className="text-4xl mb-3">🎉</div>
+              <h2 className="text-2xl font-bold text-green-400 mb-2">
+                Comanda a fost plasată cu succes!
+              </h2>
+              {ultimulCodComanda && (
+                <div className="bg-white/10 rounded-lg p-4 my-4">
+                  <p className="text-green-200 text-sm mb-2">Codul comenzii tale:</p>
+                  <p className="text-white text-3xl font-mono font-bold tracking-wider">
+                    {ultimulCodComanda}
+                  </p>
+                </div>
+              )}
+              <p className="text-green-200">
+                Vei primi confirmare pe email cu codul comenzii. Mulțumim!
+              </p>
+            </div>
+          )}
+
+          {/* MESAJ PENTRU GUEST - OPȚIONAL AUTENTIFICARE */}
+          {!isAuthenticated && (
+            <div className="mb-6 p-4 bg-zinc-900 border border-zinc-700 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4">
+              <p className="text-gray-300 text-sm">
+                💡 <span className="text-orange-400">Ai cont?</span> Autentifică-te pentru a-ți salva comenzile și a primi reduceri!
+              </p>
+              <button
+                onClick={() => navigate("/auth")}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-4 py-2 rounded-lg transition text-sm"
+              >
+                Autentifică-te
+              </button>
+            </div>
+          )}
+
+          {/* SECȚIUNEA ISTORIC COMENZI */}
+          {showOrders && isAuthenticated ? (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-white">📋 Istoricul comenzilor</h2>
+              
+              {loadingOrders ? (
+                <p className="text-orange-500 animate-pulse">Se încarcă comenzile...</p>
+              ) : orders.length === 0 ? (
+                <div className="bg-zinc-900 rounded-2xl p-8 text-center border border-zinc-800">
+                  <p className="text-gray-400 text-lg">Nu ai nicio comandă încă.</p>
+                </div>
+              ) : (
+                orders.map((order) => (
+                  <div 
+                    key={order.id} 
+                    className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800"
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                      <div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <p className="text-gray-400 text-sm">
+                            Comanda #{order.id}
+                          </p>
+                          {order.cod_comanda && (
+                            <span className="bg-orange-500/20 text-orange-400 font-mono text-sm font-semibold px-3 py-1 rounded-full">
+                              {order.cod_comanda}
                             </span>
-                            {/* Buton evaluează - doar pentru comenzi finalizate */}
-                            {(order.status === "completed" || order.status === "ready") && (
-                              <button
-                                onClick={() => setFeedbackProdus({ id: item.produs_id, nume: item.menu?.nume || "Produs" })}
-                                className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 text-xs font-semibold px-3 py-1 rounded-lg transition"
-                              >
-                                ⭐ Evaluează
-                              </button>
-                            )}
+                          )}
+                        </div>
+                        <p className="text-gray-500 text-sm mt-1">
+                          {formatDate(order.created_at)}
+                        </p>
+                        <p className="text-2xl font-bold text-orange-500 mt-2">
+                          {order.total.toFixed(2)} lei
+                        </p>
+                      </div>
+                      <span className={`${getStatusColor(order.status)} text-white text-sm font-semibold px-4 py-2 rounded-full`}>
+                        {getStatusText(order.status)}
+                      </span>
+                    </div>
+                    
+                    {/* Produse din comandă */}
+                    <div className="border-t border-zinc-800 pt-4">
+                      <h4 className="text-gray-300 font-semibold mb-3">Produse comandate:</h4>
+                      <div className="space-y-2">
+                        {order.comenzi_produse?.map((item: ComandaProdus) => (
+                          <div 
+                            key={item.id} 
+                            className="flex justify-between items-center bg-zinc-800 rounded-lg p-3"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-white">{item.menu?.nume || "Produs"}</span>
+                              <span className="text-gray-400 text-sm">x{item.cantitate}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-orange-500 font-semibold">
+                                {(item.pret_unitar * item.cantitate).toFixed(2)} lei
+                              </span>
+                              {/* Buton evaluează - doar pentru comenzi finalizate */}
+                              {(order.status === "completed" || order.status === "ready") && (
+                                <button
+                                  onClick={() => setFeedbackProdus({ id: item.produs_id, nume: item.menu?.nume || "Produs" })}
+                                  className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 text-xs font-semibold px-3 py-1 rounded-lg transition"
+                                >
+                                  ⭐ Evaluează
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            /* SECȚIUNEA COȘ DE CUMPĂRĂTURI */
+            <>
+              {cart.length === 0 ? (
+                <div className="bg-zinc-900 rounded-2xl p-12 text-center border border-zinc-800">
+                  <div className="text-6xl mb-4">🛒</div>
+                  <h2 className="text-2xl font-bold text-white mb-3">Coșul tău este gol</h2>
+                  <p className="text-gray-400 mb-6">
+                    Adaugă produse din meniu pentru a plasa o comandă.
+                  </p>
+                  <Link
+                    to="/meniu"
+                    className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-3 rounded-lg transition"
+                  >
+                    Vezi Meniul
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* LISTA PRODUSE */}
+                  <div className="lg:col-span-2 space-y-4">
+                    {cart.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 flex gap-4"
+                      >
+                        {/* Imagine produs */}
+                        {item.imagine && (
+                          <div className="w-24 h-24 rounded-lg overflow-hidden flex-0 bg-zinc-800">
+                            <img
+                              src={`${item.imagine}?width=200&height=200&resize=cover`}
+                              alt={item.nume}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Detalii produs */}
+                        <div className="grow">
+                          <h3 className="text-lg font-bold text-white">{item.nume}</h3>
+                          <p className="text-orange-500 font-semibold mt-1">
+                            {item.pret.toFixed(2)} lei / bucată
+                          </p>
+                          
+                          {/* Controale cantitate */}
+                          <div className="flex items-center gap-3 mt-3">
+                            <button
+                              onClick={() => updateQuantity(item.id, item.cantitate - 1)}
+                              className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold transition"
+                            >
+                              −
+                            </button>
+                            <span className="text-white font-semibold w-8 text-center">
+                              {item.cantitate}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(item.id, item.cantitate + 1)}
+                              className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold transition"
+                            >
+                              +
+                            </button>
+                            
+                            <button
+                              onClick={() => removeFromCart(item.id)}
+                              className="ml-auto text-red-500 hover:text-red-400 text-sm font-semibold"
+                            >
+                              🗑️ Șterge
+                            </button>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        ) : (
-          /* SECȚIUNEA COȘ DE CUMPĂRĂTURI */
-          <>
-            {cart.length === 0 ? (
-              <div className="bg-zinc-900 rounded-2xl p-12 text-center border border-zinc-800">
-                <div className="text-6xl mb-4">🛒</div>
-                <h2 className="text-2xl font-bold text-white mb-3">Coșul tău este gol</h2>
-                <p className="text-gray-400 mb-6">
-                  Adaugă produse din meniu pentru a plasa o comandă.
-                </p>
-                <Link
-                  to="/meniu"
-                  className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-3 rounded-lg transition"
-                >
-                  Vezi Meniul
-                </Link>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* LISTA PRODUSE */}
-                <div className="lg:col-span-2 space-y-4">
-                  {cart.map((item) => (
-                    <div
-                      key={item.id}
-                      className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 flex gap-4"
+                        
+                        {/* Preț total per produs */}
+                        <div className="text-right flex-0">
+                          <p className="text-xl font-bold text-white">
+                            {(item.pret * item.cantitate).toFixed(2)} lei
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Buton golire coș */}
+                    <button
+                      onClick={clearCart}
+                      className="text-red-500 hover:text-red-400 text-sm font-semibold"
                     >
-                      {/* Imagine produs */}
-                      {item.imagine && (
-                        <div className="w-24 h-24 rounded-lg overflow-hidden flex-0 bg-zinc-800">
-                          <img
-                            src={`${item.imagine}?width=200&height=200&resize=cover`}
-                            alt={item.nume}
-                            className="w-full h-full object-cover"
+                      🗑️ Golește coșul
+                    </button>
+                  </div>
+                  
+                  {/* FORMULAR PLASARE COMANDĂ */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 sticky top-24">
+                      <h2 className="text-xl font-bold text-white mb-6">
+                        📦 Detalii comandă
+                      </h2>
+                      
+                      <form onSubmit={plaseazaComanda} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-300 mb-2">
+                            Nume complet *
+                          </label>
+                          <input
+                            type="text"
+                            value={numeClient}
+                            onChange={(e) => setNumeClient(e.target.value)}
+                            placeholder="Ion Popescu"
+                            required
+                            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-500"
                           />
                         </div>
-                      )}
-                      
-                      {/* Detalii produs */}
-                      <div className="grow">
-                        <h3 className="text-lg font-bold text-white">{item.nume}</h3>
-                        <p className="text-orange-500 font-semibold mt-1">
-                          {item.pret.toFixed(2)} lei / bucată
-                        </p>
-                        
-                        {/* Controale cantitate */}
-                        <div className="flex items-center gap-3 mt-3">
-                          <button
-                            onClick={() => updateQuantity(item.id, item.cantitate - 1)}
-                            className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold transition"
-                          >
-                            −
-                          </button>
-                          <span className="text-white font-semibold w-8 text-center">
-                            {item.cantitate}
-                          </span>
-                          <button
-                            onClick={() => updateQuantity(item.id, item.cantitate + 1)}
-                            className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold transition"
-                          >
-                            +
-                          </button>
-                          
-                          <button
-                            onClick={() => removeFromCart(item.id)}
-                            className="ml-auto text-red-500 hover:text-red-400 text-sm font-semibold"
-                          >
-                            🗑️ Șterge
-                          </button>
-                        </div>
-                      </div>
-                      
-                      {/* Preț total per produs */}
-                      <div className="text-right flex-0">
-                        <p className="text-xl font-bold text-white">
-                          {(item.pret * item.cantitate).toFixed(2)} lei
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {/* Buton golire coș */}
-                  <button
-                    onClick={clearCart}
-                    className="text-red-500 hover:text-red-400 text-sm font-semibold"
-                  >
-                    🗑️ Golește coșul
-                  </button>
-                </div>
-                
-                {/* FORMULAR PLASARE COMANDĂ */}
-                <div className="lg:col-span-1">
-                  <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800 sticky top-24">
-                    <h2 className="text-xl font-bold text-white mb-6">
-                      📦 Detalii comandă
-                    </h2>
-                    
-                    <form onSubmit={plaseazaComanda} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
-                          Nume complet *
-                        </label>
-                        <input
-                          type="text"
-                          value={numeClient}
-                          onChange={(e) => setNumeClient(e.target.value)}
-                          placeholder="Ion Popescu"
-                          required
-                          className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-500"
-                        />
-                      </div>
 
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
-                          Email *
-                        </label>
-                        <input
-                          type="email"
-                          value={emailClient}
-                          onChange={(e) => setEmailClient(e.target.value)}
-                          placeholder="exemplu@email.com"
-                          required
-                          className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-500"
-                        />
-                        <p className="text-gray-500 text-xs mt-1">
-                          Vei primi confirmarea comenzii pe acest email
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
-                          Telefon *
-                        </label>
-                        <input
-                          type="tel"
-                          value={telefonClient}
-                          onChange={(e) => setTelefonClient(e.target.value)}
-                          placeholder="0712345678"
-                          required
-                          className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
-                          Ora ridicării *
-                        </label>
-                        <input
-                          type="time"
-                          value={oraRidicare}
-                          onChange={(e) => setOraRidicare(e.target.value)}
-                          required
-                          min="10:00"
-                          max="22:00"
-                          className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                        <p className="text-gray-500 text-xs mt-1">
-                          Program: 10:00 - 22:00
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
-                          Notă (opțional)
-                        </label>
-                        <textarea
-                          value={nota}
-                          onChange={(e) => setNota(e.target.value)}
-                          placeholder="Ex: Fără ceapă la pizza..."
-                          rows={3}
-                          className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-500 resize-none"
-                        />
-                      </div>
-                      
-                      {/* SUMAR PREȚ */}
-                      <div className="border-t border-zinc-700 pt-4 mt-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-gray-400">Subtotal</span>
-                          <span className="text-white">{totalPrice.toFixed(2)} lei</span>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-300 mb-2">
+                            Email *
+                          </label>
+                          <input
+                            type="email"
+                            value={emailClient}
+                            onChange={(e) => setEmailClient(e.target.value)}
+                            placeholder="exemplu@email.com"
+                            required
+                            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-500"
+                          />
+                          <p className="text-gray-500 text-xs mt-1">
+                            Vei primi confirmarea comenzii pe acest email
+                          </p>
                         </div>
-                        <div className="flex justify-between items-center mb-4">
-                          <span className="text-gray-400">Ridicare personală</span>
-                          <span className="text-green-500">GRATUIT</span>
+                        
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-300 mb-2">
+                            Telefon *
+                          </label>
+                          <input
+                            type="tel"
+                            value={telefonClient}
+                            onChange={(e) => setTelefonClient(e.target.value)}
+                            placeholder="0712345678"
+                            required
+                            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-500"
+                          />
                         </div>
-                        <div className="flex justify-between items-center text-xl font-bold">
-                          <span className="text-white">Total</span>
-                          <span className="text-orange-500">{totalPrice.toFixed(2)} lei</span>
+                        
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-300 mb-2">
+                            Ora ridicării *
+                          </label>
+                          <input
+                            type="time"
+                            value={oraRidicare}
+                            onChange={(e) => setOraRidicare(e.target.value)}
+                            required
+                            min="10:00"
+                            max="22:00"
+                            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          />
+                          <p className="text-gray-500 text-xs mt-1">
+                            Program: 10:00 - 22:00
+                          </p>
                         </div>
-                      </div>
-                      
-                      {/* BUTON PLASARE COMANDĂ */}
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-bold py-4 rounded-xl transition text-lg mt-4"
-                      >
-                        {loading ? "Se procesează..." : "🛒 Plasează comanda"}
-                      </button>
-                    </form>
+                        
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-300 mb-2">
+                            Notă (opțional)
+                          </label>
+                          <textarea
+                            value={nota}
+                            onChange={(e) => setNota(e.target.value)}
+                            placeholder="Ex: Fără ceapă la pizza..."
+                            rows={3}
+                            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-500 resize-none"
+                          />
+                        </div>
+                        
+                        {/* SUMAR PREȚ */}
+                        <div className="border-t border-zinc-700 pt-4 mt-4">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-gray-400">Subtotal</span>
+                            <span className="text-white">{totalPrice.toFixed(2)} lei</span>
+                          </div>
+                          <div className="flex justify-between items-center mb-4">
+                            <span className="text-gray-400">Ridicare personală</span>
+                            <span className="text-green-500">GRATUIT</span>
+                          </div>
+                          <div className="flex justify-between items-center text-xl font-bold">
+                            <span className="text-white">Total</span>
+                            <span className="text-orange-500">{totalPrice.toFixed(2)} lei</span>
+                          </div>
+                        </div>
+                        
+                        {/* BUTON PLASARE COMANDĂ */}
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-bold py-4 rounded-xl transition text-lg mt-4"
+                        >
+                          {loading ? "Se procesează..." : "🛒 Plasează comanda"}
+                        </button>
+                      </form>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </>
+              )}
+            </>
+          )}
+        </div>
+        
+        {/* MODAL FEEDBACK PRODUS */}
+        {feedbackProdus && (
+          <FeedbackProdusModal
+            produsId={feedbackProdus.id}
+            produsNume={feedbackProdus.nume}
+            onClose={() => setFeedbackProdus(null)}
+            onSuccess={() => {
+              setFeedbackProdus(null);
+              fetchOrders();
+            }}
+            userEmail={userEmail}
+          />
         )}
       </div>
-      
-      {/* MODAL FEEDBACK PRODUS */}
-      {feedbackProdus && (
-        <FeedbackProdusModal
-          produsId={feedbackProdus.id}
-          produsNume={feedbackProdus.nume}
-          onClose={() => setFeedbackProdus(null)}
-          onSuccess={() => {
-            setFeedbackProdus(null);
-            fetchOrders();
-          }}
-          userEmail={userEmail}
-        />
-      )}
     </div>
   );
 };
