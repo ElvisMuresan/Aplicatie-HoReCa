@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.worker"]
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.168.0/"
+  }
+}
