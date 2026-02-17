@@ -44,7 +44,7 @@ const ProtectedRoutes = () => {
   if (loading) return <p>Se încarcă...</p>;
 
   // Dacă nu e admin → redirect imediat
-  if (!isAdmin) return <Navigate to="/login" replace />;
+  if (!isAdmin) return <Navigate to="/meniu" replace />;
 
   return <Outlet />;
 };

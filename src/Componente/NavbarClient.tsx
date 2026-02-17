@@ -46,7 +46,7 @@ const NavbarClient: React.FC<NavbarClientProps> = ({ filter, setFilter }) => {
   return (
     <div className="bg-black shadow sticky top-0 z-10">
       <div className="max-w-5xl mx-auto p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-orange-500 ">🍽️ Meniul nostru</h1>
+        <h1 className="text-2xl font-bold text-orange-500 ">🍽️ Gatit la foc mic</h1>
 
         <div className="flex gap-4 items-center">
           {/* MENIU STATIC */}

@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+/* Global cursor pointer for all buttons */
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+a {
+  cursor: pointer;
+}
