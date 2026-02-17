@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Dashboard from "./Pagini Admin/Dashboard";
 import Mancare from "./Pagini Admin/Mancare";
 import Bauturi from "./Pagini Admin/Bauturi";
-import PaginaLogare from "./Pagini Admin/PaginaLogare";
 import Meniu from "./Pagini Client/Meniu";
 import FeedbackForm from "./Pagini Client/FeedbackPage";
 import FeedbackAdmin from "./Pagini Admin/Feedback";
@@ -25,10 +24,7 @@ function App() {
       <div className="bg-black min-h-screen">
         <Routes>
           {/* Redirect de la root */}
-          <Route path="/" element={<Navigate to="/login" />} />
-
-          {/* Pagina de login */}
-          <Route path="/login" element={<PaginaLogare />} />
+          <Route path="/" element={<Navigate to="/meniu" />} />
 
           {/* Rute publice client */}
           <Route path="/meniu" element={<Meniu />} />
@@ -55,7 +51,7 @@ function App() {
           </Route>
 
           {/* Fallback pentru rute inexistente */}
-          <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/meniu" />} />
         </Routes>
       </div>
     </Router>

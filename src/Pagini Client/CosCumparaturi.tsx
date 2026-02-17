@@ -71,15 +71,15 @@ const CosCumparaturi = () => {
       if (session?.user) {
         setEmailClient(session.user.email || "");
      
-const { data: profile, error: profileError } = await supabase
-  .from("profiles")
-  .select("nume, telefon")
-  .eq("id", session.user.id)
-  .single();
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("nume, telefon")
+          .eq("id", session.user.id)
+          .maybeSingle();
 
-if (profileError) {
-  console.error("Eroare la încărcarea profilului:", profileError);
-}
+        if (profileError) {
+          console.error("Eroare la încărcarea profilului:", profileError);
+        }
           
         if (profile) {
           setNumeClient(profile.nume || "");
@@ -231,11 +231,12 @@ if (profileError) {
       });
 
       const emailData = await emailResponse.json();
+      console.log('📬 Răspuns Resend:', emailData);
 
       if (!emailResponse.ok) {
         console.error('❌ Eroare email:', emailData);
       } else {
-        console.log('✅ Email trimis!');
+        console.log('✅ Email trimis cu ID:', emailData?.data?.id || emailData?.id || 'N/A');
       }
     } catch (emailError) {
       console.error('❌ Exception email:', emailError);
@@ -467,7 +468,7 @@ if (profileError) {
                     {cart.map((item) => (
                       <div
                         key={item.id}
-                        className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 flex gap-4"
+                        className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 flex gap-4 relative"
                       >
                         {/* Imagine produs */}
                         {item.imagine && (
@@ -505,20 +506,21 @@ if (profileError) {
                               +
                             </button>
                             
-                            <button
-                              onClick={() => removeFromCart(item.id)}
-                              className="ml-auto text-red-500 hover:text-red-400 text-sm font-semibold"
-                            >
-                              🗑️ Șterge
-                            </button>
                           </div>
                         </div>
                         
-                        {/* Preț total per produs */}
-                        <div className="text-right flex-0">
-                          <p className="text-xl font-bold text-white">
-                            {(item.pret * item.cantitate).toFixed(2)} lei
-                          </p>
+                        {/* Preț total per produs + buton ștergere */}
+                        <div className="text-right flex-0 flex flex-col items-end gap-2">
+                          <div className="flex flex-row items-baseline gap-1 text-xl font-bold text-white">
+                            <span>{(item.pret * item.cantitate).toFixed(2)}</span>
+                            <span className="text-base font-normal ml-1">lei</span>
+                          </div>
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="text-red-500 hover:text-red-400 text-sm font-semibold"
+                          >
+                             Șterge
+                          </button>
                         </div>
                       </div>
                     ))}

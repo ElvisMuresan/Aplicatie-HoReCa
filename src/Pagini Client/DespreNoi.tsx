@@ -87,7 +87,7 @@ const DespreNoi = () => {
             </div>
 
             <div className="text-gray-300 text-sm">
-              <p>📍 Str. Exemplu nr. 10, București</p>
+              <p>📍 Str. Exemplu nr. 10, Timișoara</p>
               <p className="mt-1">📞 +40 700 000 000</p>
               <p className="mt-1">✉️ contact@restaurant.ro</p>
             </div>
