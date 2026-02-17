@@ -160,7 +160,7 @@ const Dashboard = () => {
         {/* TOP 3 PRODUSE - eliminat, se folosește ProdusePopulare */}
 
         {/* PRODUSE POPULARE - doar vizualizare */}
-        <ProdusePopulare />
+        <ProdusePopulare onProductClick={() => {}} />
 
         {/* MENIU PRODUSE */}
         {loading ? (

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../SupabaseClient";
 import NavbarClient from "../Componente/NavbarClient";
-import ProductModal from "../Componente/ProductModal";
+import ImageModal from "../Componente/ImageModal";
 import Chatbot from "../Componente/ChatBot";
+import FeedbackProdusModal from "../Componente/FeedbackProdus";
 import ProdusePopulare from "../Componente/ProdusePopulare";
-import PendingReviewPopup from "../Componente/PendingReviewPopup";
 import { useCart } from "../Context/CartContext";
 import type { Produs } from "../types/Produse";
 
@@ -26,15 +26,16 @@ const ClientMenu = () => {
   const [filter, setFilter] = useState<null | "mancare" | "bauturi">(null);
   
   // ✅ State pentru autentificare
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [_isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [showPendingReview, setShowPendingReview] = useState(false);
 
-  // Modal detalii produs
-  const [selectedProduct, setSelectedProduct] = useState<ProdusExtins | null>(null);
+  // Modal imagine
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
+
+  // Modal feedback produs
+  const [feedbackProdus, setFeedbackProdus] = useState<ProdusExtins | null>(null);
 
   // ✅ Cart context
   const { addToCart } = useCart();
@@ -44,45 +45,16 @@ const ClientMenu = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
-      setUserId(session?.user?.id || null);
       setUserEmail(session?.user?.email || null);
-      
-      // Încărcăm numele utilizatorului
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("nume")
-          .eq("id", session.user.id)
-          .maybeSingle();
-        
-        setUserName(profile?.nume || null);
-        setShowPendingReview(true);
-      }
-      
       setCheckingAuth(false);
     };
 
     checkAuth();
 
     // ✅ Listener pentru schimbări autentificare
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
-      setUserId(session?.user?.id || null);
       setUserEmail(session?.user?.email || null);
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("nume")
-          .eq("id", session.user.id)
-          .maybeSingle();
-        
-        setUserName(profile?.nume || null);
-        setShowPendingReview(true);
-      } else {
-        setUserName(null);
-        setShowPendingReview(false);
-      }
     });
 
     return () => subscription.unsubscribe();
@@ -249,8 +221,10 @@ const ClientMenu = () => {
       <NavbarClient filter={filter} setFilter={setFilter} />
 
       <div className="p-4">
-        {/* PRODUSE POPULARE */}
-        <ProdusePopulare />
+        {/* PRODUSE POPULARE - pentru toți utilizatorii */}
+        <ProdusePopulare 
+          onProductClick={(p) => setFeedbackProdus(p)} 
+        />
 
         {/* MENIU NORMAL */}
         {loading || checkingAuth ? (
@@ -278,8 +252,12 @@ const ClientMenu = () => {
                           <img
                             src={`${p.imagine}?width=600&height=400&resize=cover`}
                             alt={p.nume}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover cursor-zoom-in"
                             loading="lazy"
+                            onClick={() => {
+                              setSelectedImage(p.imagine!);
+                              setSelectedTitle(p.nume);
+                            }}
                           />
                         </div>
                       )}
@@ -316,19 +294,9 @@ const ClientMenu = () => {
                         </div>
 
                         {p.descriere && (
-                          <div className="mt-2">
-                            <p className="text-gray-400 text-sm line-clamp-3">
-                              {p.descriere}
-                            </p>
-                            {p.descriere.length > 100 && (
-                              <button
-                                onClick={() => setSelectedProduct(p)}
-                                className="text-orange-500 hover:text-orange-400 text-xs font-semibold mt-1 transition"
-                              >
-                                Mai multe...
-                              </button>
-                            )}
-                          </div>
+                          <p className="text-gray-400 mt-2 text-sm grow">
+                            {p.descriere}
+                          </p>
                         )}
 
                         <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-zinc-800">
@@ -336,6 +304,14 @@ const ClientMenu = () => {
                             <p className="text-orange-500 font-extrabold text-lg">
                               {p.pret} lei
                             </p>
+                            
+                            {/* ✅ Buton EVALUEAZĂ - pentru toți utilizatorii */}
+                            <button
+                              onClick={() => setFeedbackProdus(p)}
+                              className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition border border-zinc-700"
+                            >
+                              ⭐ Evaluează
+                            </button>
                           </div>
 
                           {/* ✅ Buton ADAUGĂ ÎN COȘ - pentru toți utilizatorii */}
@@ -355,31 +331,26 @@ const ClientMenu = () => {
         )}
       </div>
 
-      {/* MODAL DETALII PRODUS */}
-      {selectedProduct && (
-        <ProductModal
-          produs={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onAddToCart={(p) => {
-            addToCart({
-              id: p.id,
-              nume: p.nume,
-              pret: p.pret,
-              imagine: p.imagine,
-            });
-            alert(`${p.nume} a fost adăugat în coș! 🛒`);
+      {/* MODAL IMAGINE */}
+      {selectedImage && (
+        <ImageModal
+          image={selectedImage}
+          title={selectedTitle}
+          onClose={() => {
+            setSelectedImage(null);
+            setSelectedTitle(null);
           }}
         />
       )}
 
-      {/* POPUP EVALUARE ULTIMA COMANDĂ - apare automat la autentificare */}
-      {showPendingReview && isAuthenticated && userId && userEmail && (
-        <PendingReviewPopup
-          userId={userId}
-          userEmail={userEmail}
-          userName={userName || undefined}
-          onClose={() => setShowPendingReview(false)}
+      {/* MODAL FEEDBACK PRODUS - pentru toți utilizatorii cu verificare email */}
+      {feedbackProdus && (
+        <FeedbackProdusModal
+          produsId={feedbackProdus.id}
+          produsNume={feedbackProdus.nume}
+          onClose={() => setFeedbackProdus(null)}
           onSuccess={fetchSubcategorii}
+          userEmail={userEmail}
         />
       )}
 

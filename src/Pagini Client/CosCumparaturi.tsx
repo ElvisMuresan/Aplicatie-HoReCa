@@ -71,15 +71,15 @@ const CosCumparaturi = () => {
       if (session?.user) {
         setEmailClient(session.user.email || "");
      
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("nume, telefon")
-          .eq("id", session.user.id)
-          .maybeSingle();
+const { data: profile, error: profileError } = await supabase
+  .from("profiles")
+  .select("nume, telefon")
+  .eq("id", session.user.id)
+  .single();
 
-        if (profileError) {
-          console.error("Eroare la încărcarea profilului:", profileError);
-        }
+if (profileError) {
+  console.error("Eroare la încărcarea profilului:", profileError);
+}
           
         if (profile) {
           setNumeClient(profile.nume || "");
@@ -231,12 +231,11 @@ const CosCumparaturi = () => {
       });
 
       const emailData = await emailResponse.json();
-      console.log('📬 Răspuns Resend:', emailData);
 
       if (!emailResponse.ok) {
         console.error('❌ Eroare email:', emailData);
       } else {
-        console.log('✅ Email trimis cu ID:', emailData?.data?.id || emailData?.id || 'N/A');
+        console.log('✅ Email trimis!');
       }
     } catch (emailError) {
       console.error('❌ Exception email:', emailError);
@@ -468,7 +467,7 @@ const CosCumparaturi = () => {
                     {cart.map((item) => (
                       <div
                         key={item.id}
-                        className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 flex gap-4 relative"
+                        className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 flex gap-4"
                       >
                         {/* Imagine produs */}
                         {item.imagine && (
@@ -506,21 +505,20 @@ const CosCumparaturi = () => {
                               +
                             </button>
                             
+                            <button
+                              onClick={() => removeFromCart(item.id)}
+                              className="ml-auto text-red-500 hover:text-red-400 text-sm font-semibold"
+                            >
+                              🗑️ Șterge
+                            </button>
                           </div>
                         </div>
                         
-                        {/* Preț total per produs + buton ștergere */}
-                        <div className="text-right flex-0 flex flex-col items-end gap-2">
-                          <div className="flex flex-row items-baseline gap-1 text-xl font-bold text-white">
-                            <span>{(item.pret * item.cantitate).toFixed(2)}</span>
-                            <span className="text-base font-normal ml-1">lei</span>
-                          </div>
-                          <button
-                            onClick={() => removeFromCart(item.id)}
-                            className="text-red-500 hover:text-red-400 text-sm font-semibold"
-                          >
-                             Șterge
-                          </button>
+                        {/* Preț total per produs */}
+                        <div className="text-right flex-0">
+                          <p className="text-xl font-bold text-white">
+                            {(item.pret * item.cantitate).toFixed(2)} lei
+                          </p>
                         </div>
                       </div>
                     ))}

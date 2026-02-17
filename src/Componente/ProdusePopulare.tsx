@@ -8,9 +8,14 @@ type ProdusExtins = Produs & {
   scor_popularitate?: number;
 };
 
-const ProdusePopulare = () => {
+type Props = {
+  onProductClick: (produs: Produs) => void;
+};
+
+const ProdusePopulare = ({ onProductClick }: Props) => {
   const [produsePopulare, setProdusePopulare] = useState<ProdusExtins[]>([]);
   const [loading, setLoading] = useState(true);
+  // Eliminat autentificarea pentru comenzi
   const { addToCart } = useCart();
 
   // Eliminat useEffect pentru autentificare
@@ -141,6 +146,14 @@ const ProdusePopulare = () => {
                     <span>{p.numar_comenzi} {p.numar_comenzi === 1 ? 'comandă' : 'comenzi'}</span>
                   </div>
                 )}
+                
+                {/* Scor popularitate */}
+                {p.scor_popularitate && (
+                  <div className="flex items-center gap-1 text-green-400 text-xs">
+                    <span>📊</span>
+                    <span>Scor: {p.scor_popularitate.toFixed(1)}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-zinc-700">
@@ -148,6 +161,13 @@ const ProdusePopulare = () => {
                   <p className="text-orange-400 font-extrabold text-lg">
                     {p.pret} lei
                   </p>
+                  {/* Buton EVALUEAZĂ - pentru toți utilizatorii */}
+                  <button
+                    onClick={() => onProductClick(p)}
+                    className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition border border-zinc-700"
+                  >
+                    ⭐ Evaluează
+                  </button>
                 </div>
 
                 {/* Buton ADAUGĂ ÎN COȘ - pentru toți utilizatorii */}
