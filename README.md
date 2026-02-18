@@ -50,6 +50,23 @@ VITE_GEMINI_API_KEY=<your-gemini-api-key>
 
 > Valorile reale se obțin din [Supabase Dashboard](https://supabase.com) → Settings → API, respectiv din [Google AI Studio](https://aistudio.google.com) pentru cheia Gemini.
 
+---
+
+## Pași de compilare
+
+Compilarea transformă codul sursă TypeScript + React într-un set de fișiere statice optimizate (HTML, CSS, JS) gata de publicare.
+
+**Comanda de compilare pentru producție:**
+
+```bash
+npm run build
+```
+
+Aceasta execută intern două etape:
+
+1. **`tsc -b`** — verifică și compilează codul TypeScript; orice eroare de tip oprește build-ul
+2. **`vite build`** — împachetează și optimizează aplicația (minificare, tree-shaking, code splitting)
+
 ## Lansarea aplicației
 
 ### Mod dezvoltare (cu hot-reload):
@@ -66,3 +83,29 @@ Aplicația va fi disponibilă la adresa: [http://localhost:5173](http://localhos
 npm run build
 npm run preview
 ```
+
+## Structura principală a proiectului
+
+```
+src/
+├── Componente/        # Componente reutilizabile (Navbar, Modal, Chatbot etc.)
+├── Context/           # Context global (CartContext)
+├── Pagini Admin/      # Paginile zonei de administrare
+├── Pagini Client/     # Paginile vizibile utilizatorilor
+├── types/             # Tipuri TypeScript
+├── App.tsx
+├── AppRoutes.tsx
+└── SupabaseClient.ts  # Configurare client Supabase
+supabase/
+└── functions/         # Edge Functions Supabase (Deno)
+```
+
+## Link ul catre aplicatie hostata
+
+https://aplicatie-ho-re-nq3tcjdsq-elvis-projects-cc4078ae.vercel.app
+
+## Livrable
+
+- Cod sursă complet pe repository (fără `node_modules/` și fără `dist/`)
+- Fișier `README.md` cu instrucțiuni de instalare și lansare
+- Aplicație deployată live pe Vercel
