@@ -1,68 +1,119 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import type { ReactNode } from "react";
+import { supabase } from "../SupabaseClient";
 
 // 1️⃣ DEFINIM STRUCTURA DATELOR
-// ----------------------------------
-// Cum arată un produs în coș?
 type CartItem = {
-  id: number;           // ID-ul produsului din baza de date
-  nume: string;         // "Pizza Margherita"
-  pret: number;         // 35.50
-  imagine?: string | null; // URL imagine
-  cantitate: number;    // Câte bucăți vrea utilizatorul
+  id: number;
+  nume: string;
+  pret: number;
+  imagine?: string | null;
+  cantitate: number;
 };
 
 // 2️⃣ DEFINIM FUNCȚIILE DISPONIBILE
-// ----------------------------------
-// Ce operații putem face cu coșul?
 type CartContextType = {
-  cart: CartItem[];                                    // Lista produselor
-  addToCart: (item: Omit<CartItem, "cantitate">) => void;  // Adaugă produs
-  removeFromCart: (id: number) => void;                // Șterge produs
-  updateQuantity: (id: number, cantitate: number) => void; // Modifică cantitatea
-  clearCart: () => void;                               // Golește coșul
-  totalItems: number;                                  // Total produse (ex: 5)
-  totalPrice: number;                                  // Total preț (ex: 127.50)
+  cart: CartItem[];
+  addToCart: (item: Omit<CartItem, "cantitate">) => void;
+  removeFromCart: (id: number) => void;
+  updateQuantity: (id: number, cantitate: number) => void;
+  clearCart: () => void;
+  totalItems: number;
+  totalPrice: number;
 };
 
 // 3️⃣ CREAM CONTEXTUL
-// ----------------------------------
-// Contextul este "cutia" în care punem datele
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// 4️⃣ PROVIDER - COMPONENTA CARE FURNIZEAZĂ DATELE
-// ----------------------------------
-export const CartProvider = ({ children }: { children: ReactNode }) => {
-  
-  // STATE-UL COȘULUI
-  // Încercăm să încărcăm coșul din localStorage (dacă există)
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem("cart");
-    return saved ? JSON.parse(saved) : [];
-  });
+// Helper: key for user-scoped cart
+const getUserCartKey = (userId: string) => `cart_${userId}`;
+const GUEST_CART_KEY = "cart_guest";
 
-  // SALVĂM ÎN LOCALSTORAGE LA FIECARE SCHIMBARE
-  // Astfel coșul persistă chiar dacă reîmprospătezi pagina!
+// 4️⃣ PROVIDER
+export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const userIdRef = useRef<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
+
+  // Funcție pentru a încărca coșul din storage
+  const loadCart = useCallback((userId: string | null) => {
+    if (userId) {
+      // Utilizator autentificat => încarcă din localStorage cu cheie user
+      const saved = localStorage.getItem(getUserCartKey(userId));
+      setCart(saved ? JSON.parse(saved) : []);
+    } else {
+      // Guest => încarcă din sessionStorage (se șterge la închidere tab)
+      const saved = sessionStorage.getItem(GUEST_CART_KEY);
+      setCart(saved ? JSON.parse(saved) : []);
+    }
+  }, []);
+
+  // Salvează coșul în storage-ul corect
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
+    if (!initialized) return;
+    
+    if (currentUserId) {
+      localStorage.setItem(getUserCartKey(currentUserId), JSON.stringify(cart));
+    } else {
+      sessionStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart));
+    }
+  }, [cart, currentUserId, initialized]);
+
+  // Monitorizează autentificarea
+  useEffect(() => {
+    // Verifică sesiunea inițială
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id || null;
+      setCurrentUserId(userId);
+      userIdRef.current = userId;
+      loadCart(userId);
+      setInitialized(true);
+    };
+
+    initAuth();
+
+    // Listener pentru schimbări de autentificare
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const newUserId = session?.user?.id || null;
+      const prevUserId = userIdRef.current;
+
+      if (prevUserId && !newUserId) {
+        // LOGOUT: golește coșul complet
+        sessionStorage.removeItem(GUEST_CART_KEY);
+        setCart([]);
+      }
+
+      setCurrentUserId(newUserId);
+      userIdRef.current = newUserId;
+
+      if (newUserId) {
+        // LOGIN: încarcă coșul salvat al utilizatorului
+        loadCart(newUserId);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Migrăm coșul vechi din localStorage["cart"] (one-time migration)
+  useEffect(() => {
+    const oldCart = localStorage.getItem("cart");
+    if (oldCart) {
+      localStorage.removeItem("cart");
+    }
+  }, []);
 
   // FUNCȚIE: ADAUGĂ ÎN COȘ
   const addToCart = (item: Omit<CartItem, "cantitate">) => {
     setCart((prev) => {
-      // Verificăm dacă produsul există deja în coș
       const existing = prev.find((i) => i.id === item.id);
-      
       if (existing) {
-        // Dacă există, creștem cantitatea
         return prev.map((i) =>
-          i.id === item.id 
-            ? { ...i, cantitate: i.cantitate + 1 } 
-            : i
+          i.id === item.id ? { ...i, cantitate: i.cantitate + 1 } : i
         );
       }
-      
-      // Dacă NU există, îl adăugăm cu cantitate 1
       return [...prev, { ...item, cantitate: 1 }];
     });
   };
@@ -75,24 +126,27 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // FUNCȚIE: MODIFICĂ CANTITATEA
   const updateQuantity = (id: number, cantitate: number) => {
     if (cantitate <= 0) {
-      // Dacă cantitatea e 0 sau negativă, ștergem produsul
       removeFromCart(id);
       return;
     }
-    
     setCart((prev) =>
       prev.map((i) => (i.id === id ? { ...i, cantitate } : i))
     );
   };
 
   // FUNCȚIE: GOLEȘTE COȘUL
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+    if (currentUserId) {
+      localStorage.removeItem(getUserCartKey(currentUserId));
+    }
+    sessionStorage.removeItem(GUEST_CART_KEY);
+  };
 
   // CALCULE AUTOMATE
   const totalItems = cart.reduce((sum, item) => sum + item.cantitate, 0);
   const totalPrice = cart.reduce((sum, item) => sum + item.pret * item.cantitate, 0);
 
-  // RETURNĂM PROVIDER-UL CU TOATE DATELE
   return (
     <CartContext.Provider
       value={{
@@ -110,15 +164,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// 5️⃣ HOOK PERSONALIZAT PENTRU ACCES UȘOR
-// ----------------------------------
+// 5️⃣ HOOK PERSONALIZAT
 export const useCart = () => {
   const context = useContext(CartContext);
-  
-  // Verificăm că hook-ul e folosit DOAR în componente înăuntrul Provider-ului
   if (!context) {
     throw new Error("useCart must be used within CartProvider");
   }
-  
   return context;
 };

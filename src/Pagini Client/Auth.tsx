@@ -62,11 +62,8 @@ const Auth = () => {
     } else {
       setUser(null);
       setUserProfile(null);
-      setSuccess("Ai fost deconectat cu succes!");
       setLoading(false);
-      setTimeout(() => {
-        setSuccess(null);
-      }, 2000);
+      navigate("/meniu");
     }
   };
 

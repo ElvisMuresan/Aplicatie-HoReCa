@@ -1,4 +1,59 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+// Custom time picker logic (same as RezervaMasa)
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+const pad = (n: number) => String(n).padStart(2, "0");
+
+interface TimePicker {
+  ore: number;
+  minute: number;
+  onConfirm: (h: number, m: number) => void;
+  onClose: () => void;
+}
+
+const TimePickerDropdown = ({ ore, minute, onConfirm, onClose }: TimePicker) => {
+  const [h, setH] = useState(ore);
+  const [m, setM] = useState(minute);
+  const hRef = useRef<HTMLDivElement>(null);
+  const mRef = useRef<HTMLDivElement>(null);
+  return (
+    <div className="absolute z-50 top-full left-0 mt-2 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl p-4 w-60">
+      <div className="flex gap-4">
+        <div className="flex-1 flex flex-col items-center">
+          <span className="text-xs font-bold text-orange-400 uppercase tracking-widest mb-2">Ore</span>
+          <div ref={hRef} className="h-40 overflow-y-auto scrollbar-none flex flex-col items-center gap-1 w-full" style={{ scrollbarWidth: "none" }}>
+            {HOURS.map((hour) => (
+              <button
+                key={hour}
+                type="button"
+                onClick={() => setH(hour)}
+                className={`w-full text-center py-1 rounded-lg text-sm font-semibold transition-all duration-100 ${h === hour ? "bg-orange-500 text-white scale-105" : "text-gray-300 hover:bg-zinc-700 hover:text-white active:bg-zinc-600 active:scale-95"}`}
+              >{pad(hour)}</button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center pb-2 text-gray-500 text-2xl font-bold">:</div>
+        <div className="flex-1 flex flex-col items-center">
+          <span className="text-xs font-bold text-orange-400 uppercase tracking-widest mb-2">Minute</span>
+          <div ref={mRef} className="h-40 overflow-y-auto scrollbar-none flex flex-col items-center gap-1 w-full" style={{ scrollbarWidth: "none" }}>
+            {MINUTES.map((min) => (
+              <button
+                key={min}
+                type="button"
+                onClick={() => setM(min)}
+                className={`w-full text-center py-1 rounded-lg text-sm font-semibold transition-all duration-100 ${m === min ? "bg-orange-500 text-white scale-105" : "text-gray-300 hover:bg-zinc-700 hover:text-white active:bg-zinc-600 active:scale-95"}`}
+              >{pad(min)}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2 mt-3">
+        <button type="button" onClick={onClose} className="flex-1 py-1.5 rounded-lg bg-zinc-700 hover:bg-zinc-600 active:bg-zinc-500 active:scale-95 text-white text-sm font-semibold transition-all">Anulează</button>
+        <button type="button" onClick={() => { onConfirm(h, m); onClose(); }} className="flex-1 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 active:bg-orange-700 active:scale-95 text-white text-sm font-semibold transition-all">Confirmă</button>
+      </div>
+    </div>
+  );
+};
 import { useNavigate, Link } from "react-router-dom";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "../SupabaseClient";
 import { useCart } from "../Context/CartContext";
@@ -43,7 +98,10 @@ const CosCumparaturi = () => {
   const [emailClient, setEmailClient] = useState("");
   const [telefonClient, setTelefonClient] = useState("");
   const [nota, setNota] = useState("");
-  const [oraRidicare, setOraRidicare] = useState("");
+  const [oreRidicare, setOreRidicare] = useState(12);
+  const [minuteRidicare, setMinuteRidicare] = useState(0);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const oraRidicare = `${pad(oreRidicare)}:${pad(minuteRidicare)}`;
   
   // State pentru loading și mesaje
   const [loading, setLoading] = useState(false);
@@ -247,12 +305,14 @@ const CosCumparaturi = () => {
     setShowSuccess(true);
     clearCart();
     setNota("");
-    setOraRidicare("");
+    setOreRidicare(12);
+    setMinuteRidicare(0);
     
     setTimeout(() => {
       setShowSuccess(false);
       setUltimulCodComanda(null);
-    }, 8000);
+      navigate("/meniu");
+    }, 3000);
     
   } catch (error: any) {
     console.error("❌ Eroare generală:", error);
@@ -333,7 +393,7 @@ const CosCumparaturi = () => {
           </div>
 
           {/* MESAJ SUCCES */}
-          {showSuccess && (
+          {showSuccess ? (
             <div className="mb-6 p-6 bg-green-900 border border-green-700 rounded-2xl text-center">
               <div className="text-4xl mb-3">🎉</div>
               <h2 className="text-2xl font-bold text-green-400 mb-2">
@@ -351,7 +411,8 @@ const CosCumparaturi = () => {
                 Vei primi confirmare pe email cu codul comenzii. Mulțumim!
               </p>
             </div>
-          )}
+          ) : (
+          <>
 
           {/* MESAJ PENTRU GUEST - OPȚIONAL AUTENTIFICARE */}
           {!isAuthenticated && (
@@ -591,15 +652,32 @@ const CosCumparaturi = () => {
                           <label className="block text-sm font-semibold text-gray-300 mb-2">
                             Ora ridicării *
                           </label>
-                          <input
-                            type="time"
-                            value={oraRidicare}
-                            onChange={(e) => setOraRidicare(e.target.value)}
-                            required
-                            min="10:00"
-                            max="22:00"
-                            className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          />
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setShowTimePicker((v) => !v)}
+                              className="w-full flex items-center justify-between rounded-lg bg-zinc-800 border border-zinc-700 text-white px-4 py-3 hover:border-orange-500 active:scale-[0.98] active:bg-zinc-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            >
+                              <span className="text-lg font-bold tracking-widest">
+                                <span className="text-white">{pad(oreRidicare)}</span>
+                                <span className="text-gray-500 mx-1">:</span>
+                                <span className="text-white">{pad(minuteRidicare)}</span>
+                              </span>
+                              {/* Ceas icon */}
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400 group-hover:text-white transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <circle cx="12" cy="12" r="10" />
+                                <path strokeLinecap="round" d="M12 6v6l4 2" />
+                              </svg>
+                            </button>
+                            {showTimePicker && (
+                              <TimePickerDropdown
+                                ore={oreRidicare}
+                                minute={minuteRidicare}
+                                onConfirm={(h, m) => { setOreRidicare(h); setMinuteRidicare(m); }}
+                                onClose={() => setShowTimePicker(false)}
+                              />
+                            )}
+                          </div>
                           <p className="text-gray-500 text-xs mt-1">
                             Program: 10:00 - 22:00
                           </p>
@@ -648,6 +726,8 @@ const CosCumparaturi = () => {
                 </div>
               )}
             </>
+          )}
+          </>
           )}
         </div>
         

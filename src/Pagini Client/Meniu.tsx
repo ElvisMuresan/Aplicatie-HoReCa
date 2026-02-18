@@ -180,8 +180,6 @@ const ClientMenu = () => {
       imagine: produs.imagine,
     });
     
-    // Notificare vizuală (poți înlocui cu toast)
-    alert(`${produs.nume} a fost adăugat în coș! 🛒`);
   };
 
   // Funcție pentru a afișa stelele

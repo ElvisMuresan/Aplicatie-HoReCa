@@ -15,6 +15,7 @@ const Contact = () => {
   const [nume, setNume] = useState("");
   const [email, setEmail] = useState("");
   const [mesaj, setMesaj] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // 🔹 funcție de trimitere mesaj către Supabase
   const trimiteMesaj = async () => {
@@ -35,17 +36,31 @@ const Contact = () => {
       console.error(error);
       alert("A apărut o eroare la trimiterea mesajului.");
     } else {
-      alert("Mesaj trimis cu succes!");
       setNume("");
       setEmail("");
       setMesaj("");
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        navigate("/meniu");
+      }, 3000);
     }
   };
 
   return (
     <div className="min-h-screen bg-black">
-      {/* NAVBAR */}
-     <NavbarClient filter={null} setFilter={handleSetFilter} />
+      <NavbarClient filter={null} setFilter={handleSetFilter} />
+
+      {/* POPUP SUCCES */}
+      {showSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 border border-green-600 rounded-2xl shadow-2xl p-8 text-center max-w-sm mx-4 animate-pulse">
+            <div className="text-5xl mb-4">✉️</div>
+            <h2 className="text-2xl font-bold text-green-400 mb-2">Mulțumim!</h2>
+            <p className="text-gray-300">Mesajul tău a fost trimis cu succes!</p>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-3xl mx-auto p-4 grid grid-cols-1 md:grid-cols-2 gap-8 justify-center">
         {/* FORMULAR CONTACT */}

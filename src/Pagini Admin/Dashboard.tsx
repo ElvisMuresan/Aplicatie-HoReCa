@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../SupabaseClient";
 import Navbar from "../Componente/NavbarAdmin";
 import ImageModal from "../Componente/ImageModal";
-
-import ProdusePopulare from "../Componente/ProdusePopulare";
+import AdminEditProduct from "../Componente/AdminEditProduct";
 
 type Produs = {
   id: number;
@@ -31,6 +30,7 @@ const Dashboard = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
+  const [editProduct, setEditProduct] = useState<Produs | null>(null);
 
   // Preluare subcategorii + produse
   const fetchSubcategorii = async (filter: null | 'mancare' | 'bauturi' = null) => {
@@ -159,8 +159,6 @@ const Dashboard = () => {
 
         {/* TOP 3 PRODUSE - eliminat, se folosește ProdusePopulare */}
 
-        {/* PRODUSE POPULARE - doar vizualizare */}
-        <ProdusePopulare />
 
         {/* MENIU PRODUSE */}
         {loading ? (
@@ -203,7 +201,15 @@ const Dashboard = () => {
                       )}
 
                       {p.descriere && <p className="text-gray-400 mt-2 text-sm grow">{p.descriere}</p>}
-                      <p className="text-orange-500 font-extrabold mt-3 text-lg">{p.pret} lei</p>
+                      <div className="flex items-center justify-between mt-3">
+                        <p className="text-orange-500 font-extrabold text-lg">{p.pret} lei</p>
+                        <button
+                          onClick={() => setEditProduct(p)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+                        >
+                          ✏️ Editează
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -219,6 +225,23 @@ const Dashboard = () => {
           image={selectedImage}
           title={selectedTitle}
           onClose={() => { setSelectedImage(null); setSelectedTitle(null); }}
+        />
+      )}
+
+      {/* Modal editare produs */}
+      {editProduct && (
+        <AdminEditProduct
+          produs={editProduct}
+          onClose={() => setEditProduct(null)}
+          onSaved={(updated) => {
+            setSubcategorii((prev) =>
+              prev.map((sub) => ({
+                ...sub,
+                produse: sub.produse.map((p) => (p.id === updated.id ? { ...p, ...updated } : p)),
+              }))
+            );
+            setEditProduct(null);
+          }}
         />
       )}
     </div>

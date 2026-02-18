@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, ShoppingCart, Check } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '../SupabaseClient';
+import { useCart } from '../Context/CartContext';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  addedProducts?: string[]; // Produse adăugate în coș din acest mesaj
 }
 
 interface MenuItem {
@@ -14,6 +16,7 @@ interface MenuItem {
   nume: string;
   descriere: string | null;
   pret: number;
+  imagine: string | null;
   subcategorie: string;
   categorie: string;
 }
@@ -25,6 +28,7 @@ export default function Chatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const [menuData, setMenuData] = useState<MenuItem[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { addToCart } = useCart();
 
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
@@ -39,6 +43,7 @@ export default function Chatbot() {
             nume,
             descriere,
             pret,
+            imagine,
             este_activ,
             subcategorii!inner(
               nume,
@@ -56,6 +61,7 @@ export default function Chatbot() {
           nume: item.nume,
           descriere: item.descriere,
           pret: item.pret,
+          imagine: item.imagine,
           subcategorie: item.subcategorii.nume,
           categorie: item.subcategorii.categorii.nume,
         }));
@@ -94,6 +100,51 @@ export default function Chatbot() {
       .replace(/\*/g, '•')  // Replace * with bullet point •
       .replace(/#{1,6}\s/g, '') // Remove headers #
       .replace(/`/g, ''); // Remove code backticks
+  };
+
+  // Parsează răspunsul AI pentru comenzi de adăugare în coș
+  const parseCartCommands = (text: string): { cleanText: string; productsToAdd: string[] } => {
+    const cartRegex = /\[CART_ADD\](.*?)\[\/CART_ADD\]/gs;
+    const productsToAdd: string[] = [];
+    let cleanText = text;
+
+    let match;
+    while ((match = cartRegex.exec(text)) !== null) {
+      try {
+        const parsed = JSON.parse(match[1]);
+        if (Array.isArray(parsed.products)) {
+          productsToAdd.push(...parsed.products);
+        }
+      } catch (e) {
+        console.error('Error parsing cart command:', e);
+      }
+    }
+
+    // Elimină blocurile [CART_ADD]...[/CART_ADD] din text
+    cleanText = cleanText.replace(/\[CART_ADD\].*?\[\/CART_ADD\]/gs, '').trim();
+    return { cleanText, productsToAdd };
+  };
+
+  // Adaugă produsele în coș pe baza numelor
+  const addProductsToCart = (productNames: string[]): string[] => {
+    const addedProducts: string[] = [];
+
+    for (const name of productNames) {
+      const menuItem = menuData.find(
+        (item) => item.nume.toLowerCase() === name.toLowerCase()
+      );
+      if (menuItem) {
+        addToCart({
+          id: menuItem.id,
+          nume: menuItem.nume,
+          pret: menuItem.pret,
+          imagine: menuItem.imagine,
+        });
+        addedProducts.push(menuItem.nume);
+      }
+    }
+
+    return addedProducts;
   };
 
   const createMenuContext = () => {
@@ -147,10 +198,19 @@ export default function Chatbot() {
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
       const menuContext = createMenuContext();
+
+      // Construiește istoricul conversației pentru context
+      const allMessages = [...messages, userMessage];
+      const conversationHistory = allMessages
+        .map((m) => `${m.role === 'user' ? 'CUSTOMER' : 'ASSISTANT'}: ${m.content}`)
+        .join('\n');
       
       const systemPrompt = `You are a friendly and helpful restaurant menu assistant. You have access to the complete menu below.
 
 ${menuContext}
+
+CONVERSATION HISTORY (use this to understand context and references):
+${conversationHistory}
 
 IMPORTANT INSTRUCTIONS:
 - ALL PRICES ARE IN LEI (Romanian currency), NOT DOLLARS
@@ -172,16 +232,47 @@ IMPORTANT INSTRUCTIONS:
 - You understand both languages perfectly
 - Write in plain text without markdown formatting
 
-Customer question: ${input}`;
+MENU COMBINATIONS / OPTIONS:
+- When suggesting meal combinations or options, NUMBER them clearly (Opțiunea 1, Opțiunea 2, etc.)
+- List ALL products in each option with their individual prices
+- Show the total price for each option
+- REMEMBER the options you suggested in the conversation history above
+- If the customer refers to a previous option by number (e.g. "vreau opțiunea 1", "dă-mi varianta 2", "prima opțiune", "opțiunea 3", "alege prima", "bagă opțiunea 2 în coș", "I want option 1"), look at the CONVERSATION HISTORY to find exactly which products were in that option, and add ALL of them to the cart
+- Also handle variations like: "vreau prima", "a doua", "o iau pe a treia", "pune-mi varianta 1 în coș"
+
+CART FUNCTIONALITY:
+- You can add products to the customer's shopping cart!
+- If the customer asks you to add products to their cart (e.g. "adaugă în coș", "pune-mi în coș", "add to cart", "vreau să comand", "bagă-mi în coș", etc.), you MUST include a special tag at the END of your response.
+- The tag format is: [CART_ADD]{"products": ["Exact Product Name 1", "Exact Product Name 2"]}[/CART_ADD]
+- Use the EXACT product names from the menu above (case-sensitive, exact spelling)
+- Only add products that actually exist in the menu
+- In your visible message, confirm which products you are adding and their prices
+- If the customer asks for a recommendation AND to add it to cart, recommend first, then add the recommended items
+- If the customer asks to add a category (e.g. "all pizzas"), add all items from that category
+- When the customer selects an option number (e.g. "opțiunea 1"), add ALL products from that option to cart using [CART_ADD]
+- ALWAYS place the [CART_ADD] tag at the very end of your response, after your friendly message
+
+Respond ONLY to the last customer message. Do NOT repeat previous responses.`;
 
       const result = await model.generateContent(systemPrompt);
       const response = await result.response;
       const text = response.text();
 
+      // Parsează comenzile de coș din răspuns
+      const { cleanText, productsToAdd } = parseCartCommands(text);
+      const cleanedContent = cleanMarkdown(cleanText);
+
+      // Adaugă produsele în coș dacă s-a cerut
+      let addedProducts: string[] = [];
+      if (productsToAdd.length > 0) {
+        addedProducts = addProductsToCart(productsToAdd);
+      }
+
       const assistantMessage: Message = {
         role: 'assistant',
-        content: cleanMarkdown(text), // Clean markdown formatting
+        content: cleanedContent,
         timestamp: new Date(),
+        addedProducts: addedProducts.length > 0 ? addedProducts : undefined,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -255,6 +346,26 @@ Customer question: ${input}`;
                   <div className="whitespace-pre-wrap wrap-break-words leading-relaxed text-sm">
                     {message.content}
                   </div>
+                  {/* Badge produse adăugate în coș */}
+                  {message.addedProducts && message.addedProducts.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="flex items-center gap-1.5 text-green-600 text-xs font-semibold mb-1">
+                        <Check size={14} />
+                        <span>Adăugat în coș:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {message.addedProducts.map((name, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs px-2 py-0.5 rounded-full"
+                          >
+                            <ShoppingCart size={10} />
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="text-xs text-gray-400 mt-1 px-1">
                   {message.timestamp.toLocaleTimeString([], {
