@@ -36,6 +36,10 @@ const ClientMenu = () => {
   // Modal detalii produs
   const [selectedProduct, setSelectedProduct] = useState<ProdusExtins | null>(null);
 
+  // 🎉 State pentru popup adăugare în coș
+  const [showAddedPopup, setShowAddedPopup] = useState(false);
+  const [produsAdded, setProdusAdded] = useState<string>("");
+
   // ✅ Cart context
   const { addToCart } = useCart();
 
@@ -180,6 +184,10 @@ const ClientMenu = () => {
       imagine: produs.imagine,
     });
     
+    // 🎉 Afișează popup frumos
+    setProdusAdded(produs.nume);
+    setShowAddedPopup(true);
+    setTimeout(() => setShowAddedPopup(false), 3000);
   };
 
   // Funcție pentru a afișa stelele
@@ -365,8 +373,30 @@ const ClientMenu = () => {
               pret: p.pret,
               imagine: p.imagine,
             });
+            // 🎉 Afișează popup frumos și din modal
+            setProdusAdded(p.nume);
+            setShowAddedPopup(true);
+            setTimeout(() => setShowAddedPopup(false), 3000);
           }}
         />
+      )}
+
+      {/* 🎉 POPUP FRUMOS - PRODUS ADĂUGAT ÎN COȘ */}
+      {showAddedPopup && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-slide-in-bottom">
+          <div className="bg-linear-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl border-2 border-green-300 min-w-[320px]">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl animate-bounce">✅</div>
+              <div className="flex-1">
+                <p className="font-bold text-lg mb-1">Produs adăugat!</p>
+                <p className="text-sm text-green-50 line-clamp-2">{produsAdded}</p>
+                <p className="text-xs text-green-100 mt-2 flex items-center gap-1">
+                  <span>🛒</span> Găsești produsul în coș
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* POPUP EVALUARE ULTIMA COMANDĂ - apare automat la autentificare */}

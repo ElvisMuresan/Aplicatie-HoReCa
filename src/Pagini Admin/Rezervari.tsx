@@ -20,6 +20,24 @@ type Rezervare = {
 const AdminRezervari = () => {
   const [rezervari, setRezervari] = useState<Rezervare[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // State pentru popup-uri
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
+  const [popupType, setPopupType] = useState<"success" | "error" | "info">("success");
+  
+  // State pentru popup introducere masă
+  const [showMasaPopup, setShowMasaPopup] = useState(false);
+  const [numarMasa, setNumarMasa] = useState("");
+  const [rezervareCurenta, setRezarvareCurenta] = useState<Rezervare | null>(null);
+
+  // Funcție helper pentru afișarea popup-urilor
+  const showNotification = (message: string, type: "success" | "error" | "info" = "success") => {
+    setPopupMessage(message);
+    setPopupType(type);
+    setShowPopup(true);
+    setTimeout(() => setShowPopup(false), 3500);
+  };
 
   // fetch rezervari pending
   const fetchRezervari = async () => {
@@ -49,7 +67,7 @@ const AdminRezervari = () => {
         { event: "INSERT", schema: "public", table: "rezervari" },
         (payload) => {
           setRezervari((prev) => [...prev, payload.new as Rezervare]);
-          alert("Ai o rezervare nouă!");
+          showNotification("📩 Ai o rezervare nouă!", "info");
         }
       )
       .subscribe();
@@ -61,27 +79,41 @@ const AdminRezervari = () => {
 
   //aceptare rezervare
  const acceptaRezervare = async (rezervare: Rezervare) => {
-  const masaInput = prompt("Introduceți numărul mesei pentru rezervare:");
-  if (!masaInput) return;
+  // Deschide popup-ul pentru introducerea mesei
+  setRezarvareCurenta(rezervare);
+  setNumarMasa("");
+  setShowMasaPopup(true);
+};
 
-  const masa = parseInt(masaInput);
+// Funcție pentru confirmarea acceptării rezervării
+const confirmaAcceptareRezervare = async () => {
+  if (!rezervareCurenta) return;
+  
+  const masa = parseInt(numarMasa);
   if (isNaN(masa) || masa <= 0) {
-    alert("Număr de masă invalid!");
+    showNotification("❌ Număr de masă invalid!", "error");
     return;
   }
+  if (masa > 20) {
+    showNotification("❌ Poți alege doar mese între 1 și 20!", "error");
+    return;
+  }
+
+  // Închide popup-ul
+  setShowMasaPopup(false);
 
   try {
     // 1. Actualizează rezervarea și primește codul înapoi
     const { data: updatedRezervare, error: updateError } = await supabase
       .from("rezervari")
       .update({ status: "accepted", masa })
-      .eq("id", rezervare.id)
+      .eq("id", rezervareCurenta.id)
       .select('*')
       .single();
 
     if (updateError) {
       console.error("Eroare la update rezervare:", updateError);
-      alert("Eroare la salvarea rezervării: " + updateError.message);
+      showNotification("❌ Eroare la salvarea rezervării: " + updateError.message, "error");
       return;
     }
 
@@ -91,8 +123,8 @@ const AdminRezervari = () => {
     // Verifică dacă codul există
     if (!updatedRezervare?.cod_rezervare) {
       console.error('❌ EROARE: cod_rezervare lipsește din baza de date!');
-      alert('Rezervarea a fost acceptată, dar codul de rezervare nu a fost generat. Verifică trigger-ul SQL.');
-      setRezervari(rezervari.filter((r) => r.id !== rezervare.id));
+      showNotification('⚠️ Rezervarea a fost acceptată, dar codul de rezervare nu a fost generat. Verifică trigger-ul SQL.', "error");
+      setRezervari(rezervari.filter((r) => r.id !== rezervareCurenta.id));
       return;
     }
 
@@ -125,18 +157,21 @@ const AdminRezervari = () => {
     if (emailError) {
       console.error("❌ Eroare la trimiterea emailului:", emailError);
       console.error("❌ Detalii eroare:", JSON.stringify(emailError, null, 2));
-      alert("Rezervarea a fost acceptată, dar emailul nu a putut fi trimis.\n" + emailError.message);
+      showNotification("⚠️ Rezervarea a fost acceptată, dar emailul nu a putut fi trimis.\n" + emailError.message, "error");
     } else {
       console.log("✅ Email trimis cu succes!", emailData);
-      alert(`Rezervarea pentru ${updatedRezervare.nume} a fost acceptată și emailul a fost trimis!`);
+      showNotification(`✅ Rezervarea pentru ${updatedRezervare.nume} a fost acceptată și emailul a fost trimis!`, "success");
     }
 
     // 4. Actualizare UI
-    setRezervari(rezervari.filter((r) => r.id !== rezervare.id));
+    setRezervari(rezervari.filter((r) => r.id !== rezervareCurenta.id));
 
   } catch (err) {
     console.error("❌ Eroare generală:", err);
-    alert("Eroare la procesarea rezervării: " + (err as Error).message);
+    showNotification("❌ Eroare la procesarea rezervării: " + (err as Error).message, "error");
+  } finally {
+    setRezarvareCurenta(null);
+    setNumarMasa("");
   }
 };
 
@@ -154,14 +189,14 @@ const AdminRezervari = () => {
 
     if (error) {
       console.error("Eroare la respingere rezervare:", error.message);
-      alert("Eroare la respingerea rezervării: " + error.message);
+      showNotification("❌ Eroare la respingerea rezervării: " + error.message, "error");
       return;
     }
 
     // actualizare UI
     setRezervari(rezervari.filter((r) => r.id !== rezervare.id));
-    alert(
-      `Rezervarea pentru ${rezervare.nume} a fost respinsă. Clientul va fi notificat prin email.`
+    showNotification(
+      `✅ Rezervarea pentru ${rezervare.nume} a fost respinsă. Clientul va fi notificat prin email.`, "success"
     );
   };
 
@@ -280,6 +315,98 @@ const AdminRezervari = () => {
           </div>
         )}
       </div>
+
+      {/* �️ POPUP INTRODUCERE NUMĂR MASĂ */}
+      {showMasaPopup && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border-2 border-orange-500 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-3">🍽️</div>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Atribuie masă
+              </h2>
+              <p className="text-gray-400 text-sm">
+                Rezervare pentru: <span className="text-orange-500 font-semibold">{rezervareCurenta?.nume}</span>
+              </p>
+            </div>
+
+            {/* Input */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Număr masă *
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="20"
+                value={numarMasa}
+                onChange={(e) => setNumarMasa(e.target.value)}
+                placeholder="Ex: 5"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') confirmaAcceptareRezervare();
+                  if (e.key === 'Escape') setShowMasaPopup(false);
+                }}
+                className="w-full bg-zinc-800 border-2 border-zinc-700 text-white text-center text-2xl font-bold rounded-xl px-4 py-4 focus:outline-none focus:border-orange-500 placeholder-gray-600 transition-all"
+              />
+              <p className="text-gray-500 text-xs mt-2 text-center">
+                Apasă Enter pentru a confirma sau Esc pentru a anula
+              </p>
+            </div>
+
+            {/* Butoane */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowMasaPopup(false);
+                  setNumarMasa("");
+                  setRezarvareCurenta(null);
+                }}
+                className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200"
+              >
+                Anulează
+              </button>
+              <button
+                onClick={confirmaAcceptareRezervare}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Confirmă
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* �🎉 POPUP-URI PENTRU NOTIFICĂRI */}
+      {showPopup && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-slide-in-bottom">
+          <div 
+            className={`${
+              popupType === "success" 
+                ? "bg-linear-to-r from-green-500 to-emerald-600 border-green-300" 
+                : popupType === "error"
+                ? "bg-linear-to-r from-red-500 to-rose-600 border-red-300"
+                : "bg-linear-to-r from-orange-500 to-amber-600 border-orange-300"
+            } text-white px-6 py-4 rounded-2xl shadow-2xl border-2 min-w-[320px] max-w-125`}
+          >
+            <div className="flex items-start gap-4">
+              <div className="text-4xl animate-bounce">
+                {popupType === "success" ? "✅" : popupType === "error" ? "❌" : "📬"}
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-lg mb-1">
+                  {popupType === "success" ? "Succes!" : popupType === "error" ? "Eroare!" : "Notificare"}
+                </p>
+                <p className="text-sm text-white/90 whitespace-pre-line">{popupMessage}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

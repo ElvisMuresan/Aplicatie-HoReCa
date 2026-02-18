@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 // Custom time picker logic (same as RezervaMasa)
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 10); // 10-22
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -312,7 +312,7 @@ const CosCumparaturi = () => {
       setShowSuccess(false);
       setUltimulCodComanda(null);
       navigate("/meniu");
-    }, 3000);
+    }, 6000);
     
   } catch (error: any) {
     console.error("❌ Eroare generală:", error);

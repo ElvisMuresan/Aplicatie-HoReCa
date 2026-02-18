@@ -4,7 +4,7 @@ import NavbarClient from "../Componente/NavbarClient";
 import { supabase } from "../SupabaseClient";
 
 // ─── Custom Time Picker ────────────────────────────────────────────────────────
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 10); // 10-22
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 
 const pad = (n: number) => String(n).padStart(2, "0");

@@ -240,7 +240,7 @@ export default function ModificaRezervare() {
                     value={novaData}
                     onChange={(e) => setNovaData(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none text-black"
                   />
                 </div>
                 <div>
@@ -251,7 +251,7 @@ export default function ModificaRezervare() {
                     type="time"
                     value={novaOra}
                     onChange={(e) => setNovaOra(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none text-black"
                   />
                 </div>
               </div>

@@ -13,6 +13,10 @@ const ProdusePopulare = () => {
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
 
+  // 🎉 State pentru popup adăugare în coș
+  const [showAddedPopup, setShowAddedPopup] = useState(false);
+  const [produsAdded, setProdusAdded] = useState<string>("");
+
   // Eliminat useEffect pentru autentificare
 
   useEffect(() => {
@@ -71,6 +75,11 @@ const ProdusePopulare = () => {
       pret: produs.pret,
       imagine: produs.imagine,
     });
+    
+    // 🎉 Afișează popup frumos
+    setProdusAdded(produs.nume);
+    setShowAddedPopup(true);
+    setTimeout(() => setShowAddedPopup(false), 3000);
   };
 
   if (loading) {
@@ -84,10 +93,29 @@ const ProdusePopulare = () => {
   if (produsePopulare.length === 0) return null;
 
   return (
-    <div className="mb-12">
-      <h2 className="text-3xl font-extrabold mb-6 text-orange-500">
-        🔥 Cele mai populare produse
-      </h2>
+    <>
+      {/* 🎉 POPUP FRUMOS - PRODUS ADĂUGAT ÎN COȘ */}
+      {showAddedPopup && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-slide-in-bottom">
+          <div className="bg-linear-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl border-2 border-green-300 min-w-[320px]">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl animate-bounce">✅</div>
+              <div className="flex-1">
+                <p className="font-bold text-lg mb-1">Produs adăugat!</p>
+                <p className="text-sm text-green-50 line-clamp-2">{produsAdded}</p>
+                <p className="text-xs text-green-100 mt-2 flex items-center gap-1">
+                  <span>🛒</span> Găsești produsul în coș
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mb-12">
+        <h2 className="text-3xl font-extrabold mb-6 text-orange-500">
+          🔥 Cele mai populare produse
+        </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {produsePopulare.map((p, index) => (
@@ -162,6 +190,7 @@ const ProdusePopulare = () => {
         ))}
       </div>
     </div>
+    </>
   );
 };
 
