@@ -21,35 +21,37 @@ const Auth = () => {
   const [telefon, setTelefon] = useState("");
   
   // State pentru loading și erori
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // ✅ VERIFICĂ DACĂ UTILIZATORUL ESTE DEJA AUTENTIFICAT
+  // Citește sesiunea curentă — onAuthStateChange trimite INITIAL_SESSION
+  // imediat din localStorage (fără call de rețea) la prima montare
   useEffect(() => {
-    checkUser();
-  }, []);
-
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      setUser(user);
-      
-      // Încarcă profilul utilizatorului
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("nume, telefon")
-        .eq("id", user.id)
-        .maybeSingle();
-      
-      if (profile) {
-        setUserProfile(profile);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          supabase
+            .from("profiles")
+            .select("nume, telefon")
+            .eq("id", session.user.id)
+            .maybeSingle()
+            .then(({ data: profile }) => {
+              if (profile) setUserProfile(profile);
+            });
+        } else {
+          setUser(null);
+          setUserProfile(null);
+        }
+        // Deblocăm UI după primul eveniment (INITIAL_SESSION)
+        setSessionChecked(true);
       }
-    }
-    
-    setLoading(false);
-  };
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // ✅ FUNCȚIE LOGOUT
   const handleLogout = async () => {
@@ -220,6 +222,15 @@ const Auth = () => {
     }
   };
 
+  // Spinner până când sesiunea e verificată
+  if (!sessionChecked) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-orange-500 text-xl animate-pulse">🍽️ Se încarcă...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -339,15 +350,10 @@ const Auth = () => {
               </button>
             </div>
 
-            {/* MESAJE EROARE / SUCCES */}
+            {/* MESAJ EROARE */}
             {error && (
               <div className="mb-4 p-3 bg-red-900 border border-red-700 text-red-200 rounded-lg text-sm">
                 ❌ {error}
-              </div>
-            )}
-            {success && (
-              <div className="mb-4 p-3 bg-green-900 border border-green-700 text-green-200 rounded-lg text-sm">
-                ✅ {success}
               </div>
             )}
 
@@ -509,6 +515,13 @@ const Auth = () => {
         <p className="text-center text-gray-500 text-xs mt-6">
           Creând un cont, accepți termenii și condițiile noastre
         </p>
+
+        {/* MESAJ SUCCES — afișat sub termeni și condiții */}
+        {success && (
+          <div className="mt-3 p-3 bg-green-900 border border-green-700 text-green-200 rounded-lg text-sm text-center">
+            ✅ {success}
+          </div>
+        )}
       </div>
     </div>
   );

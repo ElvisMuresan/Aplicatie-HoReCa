@@ -32,7 +32,7 @@ function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/desprenoi" element={<DespreNoi />} />
           <Route path="/rezervamasa" element={<RezervaMasa />} />
-          <Route path="/auth" element={<Auth />} />
+         <Route path="/auth" element={<Auth key={Date.now()} />} />
           <Route path="/cos" element={<CosCumparaturi />} />
           <Route path="/confirm-review" element={<ConfirmReview />} />
           
