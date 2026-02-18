@@ -157,7 +157,6 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* TOP 3 PRODUSE - eliminat, se folosește ProdusePopulare */}
 
 
         {/* MENIU PRODUSE */}
@@ -183,7 +182,7 @@ const Dashboard = () => {
                     <div className="p-4 flex flex-col grow">
                       <h3 className="text-lg font-bold text-white">{p.nume}</h3>
 
-                      {/* RATING GOOGLE-STYLE - DOAR VIZUALIZARE */}
+                     
                       {p.numar_recenzii && p.numar_recenzii > 0 ? (
                         <div className="flex items-center gap-2 mt-2">
                           {renderStars(p.rating_mediu || 0)}

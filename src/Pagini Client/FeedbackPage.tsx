@@ -16,7 +16,7 @@ const FeedbackPage = () => {
     sugestii: { rating: null, continut: "" },
   });
 
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const navigate = useNavigate();
 
