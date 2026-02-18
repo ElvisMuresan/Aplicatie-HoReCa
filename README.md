@@ -1,73 +1,68 @@
-# React + TypeScript + Vite
+# Aplicație HoReCa – Sistem de Management pentru Restaurant
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Descriere
 
-Currently, two official plugins are available:
+Aplicație web full-stack destinată managementului unui restaurant, cu funcționalități pentru clienți (meniu, rezervări, comenzi, feedback, autentificare) și pentru administratori (gestionare produse, comenzi, rezervări, feedback, rapoarte).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Tehnologii utilizate: **React**, **TypeScript**, **Vite**, **Tailwind CSS**, **Supabase** (bază de date PostgreSQL + autentificare + Edge Functions),
 
-## React Compiler
+## Repository
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+Codul sursă complet (fără fișiere binare compilate) este disponibil la adresa:
 
-## Expanding the ESLint configuration
+> [https://github.com/ElvisMuresan/Aplicatie-HoReCa](https://github.com/ElvisMuresan/Aplicatie-HoReCa)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Repository-ul poate fi partajat cu coordonatorul și membrii comisiei de evaluare la cerere.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Cerințe preliminare
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Înainte de instalare, asigurați-vă că aveți instalate:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- [Node.js](https://nodejs.org/) versiunea **18** sau mai nouă
+- [npm](https://www.npmjs.com/) versiunea **9** sau mai nouă
+
+---
+
+## Pași de instalare
+
+1. **Clonați repository-ul:**
+
+```bash
+git clone https://github.com/ElvisMuresan/Aplicatie-HoReCa.git
+cd Aplicatie-HoReCa
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. **Instalați dependențele:**
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+npm install
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+3. **Configurați variabilele de mediu:**
+
+Creați un fișier `.env` în rădăcina proiectului cu următorul conținut (înlocuiți valorile cu cele din proiectul vostru Supabase):
+
+```env
+VITE_SUPABASE_URL=https://<your-project>.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-anon-key>
+VITE_GEMINI_API_KEY=<your-gemini-api-key>
+```
+
+> Valorile reale se obțin din [Supabase Dashboard](https://supabase.com) → Settings → API, respectiv din [Google AI Studio](https://aistudio.google.com) pentru cheia Gemini.
+
+## Lansarea aplicației
+
+### Mod dezvoltare (cu hot-reload):
+
+```bash
+npm run dev
+```
+
+Aplicația va fi disponibilă la adresa: [http://localhost:5173](http://localhost:5173)
+
+### Mod producție (preview local după build):
+
+```bash
+npm run build
+npm run preview
 ```
