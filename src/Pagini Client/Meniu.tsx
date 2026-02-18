@@ -365,7 +365,6 @@ const ClientMenu = () => {
               pret: p.pret,
               imagine: p.imagine,
             });
-            alert(`${p.nume} a fost adăugat în coș! 🛒`);
           }}
         />
       )}
