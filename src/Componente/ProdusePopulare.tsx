@@ -71,7 +71,6 @@ const ProdusePopulare = () => {
       pret: produs.pret,
       imagine: produs.imagine,
     });
-    alert(`${produs.nume} a fost adăugat în coș! 🛒`);
   };
 
   if (loading) {
