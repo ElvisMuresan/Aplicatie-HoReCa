@@ -57,6 +57,7 @@ const TimePickerDropdown = ({ ore, minute, onConfirm, onClose }: TimePicker) => 
 import { useNavigate, Link } from "react-router-dom";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "../SupabaseClient";
 import { useCart } from "../Context/CartContext";
+import { useAuth } from "../Context/AuthContext";
 import FeedbackProdusModal from "../Componente/FeedbackProdus";
 import NavbarClient from "../Componente/NavbarClient";
 
@@ -87,11 +88,11 @@ const CosCumparaturi = () => {
   const navigate = useNavigate();
   const { cart, removeFromCart, updateQuantity, clearCart, totalPrice, totalItems } = useCart();
   
-  // State pentru autentificare
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  // ✅ Auth din context global
+  const { user, checkingAuth } = useAuth();
+  const isAuthenticated = !!user;
+  const userId = user?.id ?? null;
+  const userEmail = user?.email ?? null;
   
   // State pentru formular comandă
   const [numeClient, setNumeClient] = useState("");
@@ -116,46 +117,23 @@ const CosCumparaturi = () => {
   // State pentru feedback produs
   const [feedbackProdus, setFeedbackProdus] = useState<{id: number, nume: string} | null>(null);
 
-  // Verificare autentificare
+  // ✅ Pre-populăm datele utilizatorului când userul se schimbă
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-      setUserId(session?.user?.id || null);
-      setUserEmail(session?.user?.email || null);
-      setCheckingAuth(false);
-      
-      // Pre-populăm datele utilizatorului dacă există
-      if (session?.user) {
-        setEmailClient(session.user.email || "");
-     
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("nume, telefon")
-          .eq("id", session.user.id)
-          .maybeSingle();
-
-        if (profileError) {
-          console.error("Eroare la încărcarea profilului:", profileError);
-        }
-          
-        if (profile) {
-          setNumeClient(profile.nume || "");
-          setTelefonClient(profile.telefon || "");
-        }
-      }
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-      setUserId(session?.user?.id || null);
-      setUserEmail(session?.user?.email || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (user) {
+      setEmailClient(user.email || "");
+      supabase
+        .from("profiles")
+        .select("nume, telefon")
+        .eq("id", user.id)
+        .maybeSingle()
+        .then(({ data: profile }) => {
+          if (profile) {
+            setNumeClient(profile.nume || "");
+            setTelefonClient(profile.telefon || "");
+          }
+        });
+    }
+  }, [user]);
 
   // Încărcăm comenzile utilizatorului
   const fetchOrders = async () => {

@@ -6,6 +6,7 @@ import Chatbot from "../Componente/ChatBot";
 import ProdusePopulare from "../Componente/ProdusePopulare";
 import PendingReviewPopup from "../Componente/PendingReviewPopup";
 import { useCart } from "../Context/CartContext";
+import { useAuth } from "../Context/AuthContext";
 import type { Produs } from "../types/Produse";
 
 // Tipuri extinse pentru a include numărul de recenzii și comenzi
@@ -25,12 +26,12 @@ const ClientMenu = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<null | "mancare" | "bauturi">(null);
   
-  // ✅ State pentru autentificare
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  // ✅ Auth din context global
+  const { user, checkingAuth } = useAuth();
+  const isAuthenticated = !!user;
+  const userId = user?.id ?? null;
+  const userEmail = user?.email ?? null;
   const [userName, setUserName] = useState<string | null>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
   const [showPendingReview, setShowPendingReview] = useState(false);
 
   // Modal detalii produs
@@ -43,54 +44,23 @@ const ClientMenu = () => {
   // ✅ Cart context
   const { addToCart } = useCart();
 
-  // ✅ Verificare autentificare
+  // ✅ Încărcăm profilul când userul se schimbă
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-      setUserId(session?.user?.id || null);
-      setUserEmail(session?.user?.email || null);
-      
-      // Încărcăm numele utilizatorului
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("nume")
-          .eq("id", session.user.id)
-          .maybeSingle();
-        
-        setUserName(profile?.nume || null);
-        setShowPendingReview(true);
-      }
-      
-      setCheckingAuth(false);
-    };
-
-    checkAuth();
-
-    // ✅ Listener pentru schimbări autentificare
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setIsAuthenticated(!!session);
-      setUserId(session?.user?.id || null);
-      setUserEmail(session?.user?.email || null);
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("nume")
-          .eq("id", session.user.id)
-          .maybeSingle();
-        
-        setUserName(profile?.nume || null);
-        setShowPendingReview(true);
-      } else {
-        setUserName(null);
-        setShowPendingReview(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (user) {
+      supabase
+        .from("profiles")
+        .select("nume")
+        .eq("id", user.id)
+        .maybeSingle()
+        .then(({ data: profile }) => {
+          setUserName(profile?.nume || null);
+          setShowPendingReview(true);
+        });
+    } else {
+      setUserName(null);
+      setShowPendingReview(false);
+    }
+  }, [user]);
 
   const fetchSubcategorii = async () => {
     setLoading(true);
@@ -159,21 +129,7 @@ const ClientMenu = () => {
     fetchSubcategorii();
   }, [filter]);
 
-  // 🔄 Refresh când utilizatorul se întoarce pe pagină (după confirmare)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('🔄 Pagina redevine vizibilă - refresh date...');
-        fetchSubcategorii();
-      }
-    };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [filter]);
 
   // ✅ Handler pentru adăugare în coș
   const handleAddToCart = (produs: ProdusExtins) => {

@@ -1,11 +1,14 @@
-import { CartProvider } from "./Context/CartContext"; // ✅ Importăm provider-ul
+import { CartProvider } from "./Context/CartContext";
+import { AuthProvider } from "./Context/AuthContext";
 import AppRoutes from "./AppRoutes";
 
 function App() {
   return (
-    <CartProvider>  {/* ✅ Înfășurăm totul */}
-      <AppRoutes />
-    </CartProvider>
+    <AuthProvider>
+      <CartProvider>
+        <AppRoutes />
+      </CartProvider>
+    </AuthProvider>
   );
 }
 

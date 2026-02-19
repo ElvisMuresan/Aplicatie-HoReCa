@@ -181,6 +181,15 @@ export default function ModificaRezervare() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
+      {/* CSS pentru iconițele calendar și ceas */}
+      <style>{`
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+          filter: invert(1);
+          cursor: pointer;
+        }
+      `}</style>
+
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           {/* HEADER */}
@@ -192,6 +201,7 @@ export default function ModificaRezervare() {
               {cod}
             </div>
           </div>
+
           {/* ALERT ANULATĂ */}
           {esteAnulata && (
             <div className="bg-red-100 border-l-4 border-red-500 p-4 mb-6">
@@ -200,6 +210,7 @@ export default function ModificaRezervare() {
               </p>
             </div>
           )}
+
           {/* DETALII CURENTE */}
           <div className="bg-gray-50 p-6 rounded-lg mb-6">
             <h3 className="font-bold text-lg mb-4">Detalii curente:</h3>
@@ -227,6 +238,7 @@ export default function ModificaRezervare() {
               </p>
             </div>
           </div>
+
           {/* FORMULAR MODIFICARE */}
           {!esteAnulata && (
             <>
@@ -240,7 +252,7 @@ export default function ModificaRezervare() {
                     value={novaData}
                     onChange={(e) => setNovaData(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none text-black"
+                    className="w-full px-4 py-2 border border-zinc-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none bg-zinc-800 text-white"
                   />
                 </div>
                 <div>
@@ -251,10 +263,11 @@ export default function ModificaRezervare() {
                     type="time"
                     value={novaOra}
                     onChange={(e) => setNovaOra(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none text-black"
+                    className="w-full px-4 py-2 border border-zinc-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none bg-zinc-800 text-white"
                   />
                 </div>
               </div>
+
               {/* MESAJ */}
               {mesaj && (
                 <div className={`p-4 rounded-lg mb-6 ${
@@ -263,6 +276,7 @@ export default function ModificaRezervare() {
                   {mesaj}
                 </div>
               )}
+
               {/* BUTOANE */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
@@ -280,6 +294,7 @@ export default function ModificaRezervare() {
                   🗑️ Anulează Rezervarea
                 </button>
               </div>
+
               {/* INFO */}
               <div className="mt-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
                 <p className="text-sm text-blue-800">
